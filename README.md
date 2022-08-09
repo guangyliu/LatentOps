@@ -2,7 +2,6 @@
 Source code of LatentOps.
 
 Paper: ***Composable Text Control Operations in Latent Space with Ordinary Differential Equations***
-Authors: Guangyi Liu, Zeyu Feng, Yuan Gao, Zichao Yang, Xiaodan Liang, Junwei Bao, Xiaodong He, Shuguang Cui, Zhen Li, Zhiting Hu
 
 *https://arxiv.org/abs/2208.00638*
 

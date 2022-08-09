@@ -2,3 +2,5 @@ curl 'https://cuhko365-my.sharepoint.com/personal/218019026_link_cuhk_edu_cn/_la
 cd data
 tar -zxvf datasets.tar.gz
 cd ..
+
+echo "Datasets are in ./data/datasets"

@@ -2,9 +2,21 @@
 Source code of LatentOps.
 
 Paper: ***Composable Text Control Operations in Latent Space with Ordinary Differential Equations***
-
+Authors: Guangyi Liu, Zeyu Feng, Yuan Gao, Zichao Yang, Xiaodan Liang, Junwei Bao, Xiaodong He, Shuguang Cui, Zhen Li, Zhiting Hu
 
 *https://arxiv.org/abs/2208.00638*
+
+## Recommended Environment
+We recommend to create a new conda enviroment (named *latentops*) by:
+```
+$ conda create -n latentops python==3.9.1 pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3 -c pytorch
+```
+Then activate *latentops* and install the required packages by running:
+```
+$ conda activate latentops
+$ bash build_envs.sh
+```
+
 
 ## Prepare Datasets
 There are two ways to download the datasets (the second way is recommonded)
@@ -34,5 +46,13 @@ To facilitate comparision, we provide the output files of text style transfer in
 
 
 
-
-***Code and pretraiend model are coming soon...***
+## Cite
+```
+@article{liu2022composable,
+    title={Composable Text Control Operations in Latent Space with Ordinary Differential Equations},
+    author={Liu, Guangyi and Feng, Zeyu and Gao, Yuan and Yang, Zichao and Liang, Xiaodan and Bao, Junwei and He, Xiaodong and Cui, Shuguang and Li, Zhen and Hu, Zhiting},
+    journal={arXiv preprint arXiv:2208.00638},
+    year={2022}
+}
+```
+***Code is coming soon...***

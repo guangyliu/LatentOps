@@ -41,7 +41,7 @@ There are two ways to download the pretrained models (the second way is recommon
   
     
 ## Outputs
-To facilitate comparision, we provide the output files of text style transfer in *./outputs* folder.
+To facilitate comparision, we provide the output files of text style transfer in [*./outputs*](/outputs) folder.
 
 
 

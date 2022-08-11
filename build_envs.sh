@@ -2,7 +2,7 @@
 # Install required pip packages
 pip install transformers==4.19.0 
 pip install nltk==3.7 
-pip install boto3 sacremoses tensorboardX
+pip install boto3 sacremoses tensorboardX torchdiffeq
 
 # Install Apex
 git clone https://github.com/NVIDIA/apex

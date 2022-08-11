@@ -1,47 +1,44 @@
 # LatentOps [WIP]
-Source code of LatentOps.
-
-Paper: ***Composable Text Control Operations in Latent Space with Ordinary Differential Equations***
+Source code of paper: ***Composable Text Control Operations in Latent Space with Ordinary Differential Equations***
 
 *https://arxiv.org/abs/2208.00638*
 
-## Recommended Environment
+
+***Code is coming soon...***
+
+The code is based on [*Optimus*](https://github.com/ChunyuanLI/Optimus) and [*LACE*](https://github.com/NVlabs/LACE).
+## Preparation
+### Recommended Environment
 We recommend to create a new conda enviroment (named *latentops*) by:
-```
-$ conda create -n latentops python==3.9.1 pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3 -c pytorch
+```shell
+conda create -n latentops python==3.9.1 pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3 -c pytorch
 ```
 Then activate *latentops* and install the required packages by running:
+```shell
+conda activate latentops
+bash build_envs.sh
 ```
-$ conda activate latentops
-$ bash build_envs.sh
+
+### Prepare Datasets
+Download and process the datasets by running the script:
+```shell
+bash download_datasets.sh
 ```
 
-
-## Prepare Datasets
-There are two ways to download the datasets (the second way is recommonded)
-
- - Download from Onedrive and unzip into [*./data*](/data) folder : [Link](https://cuhko365-my.sharepoint.com/:u:/g/personal/218019026_link_cuhk_edu_cn/ETzJ0Fae4-lHi3vN8G8HYbQBvZr7wh7iQvqMCd2YloAb_g?e=8CpDkl)
- - Download and process the datasets by running the scripts:
- 
-    ```
-    $ bash download_datasets.sh
-    ```
-
-## Pretrained Models
-There are two ways to download the pretrained models (the second way is recommonded)
-
- - Download from Onedrive and unzip into [*./ckpts*](/ckpts) folder : [Link](https://cuhko365-my.sharepoint.com/:f:/g/personal/218019026_link_cuhk_edu_cn/ElZdkwSkQtRKrJ94Eh-KMAIBJfm2cwUoBVI0TbwIik06Wg?e=mWSVAj)
- - Download and process the pretrained model by running the scripts:
- 
-    ```
-    $ bash download_pretrained_models.sh
-    ```
+### Pretrained Models
+Download and process the pretrained model by running the script:
+```shell
+bash download_pretrained_models.sh
+```
     
-
-  
+### Prepare Classifiers
+Download and process the classifiers by running the script:
+ ```shell
+ bash download_classifiers.sh
+ ```
     
 ## Outputs
-To facilitate comparision, we provide the output files of text style transfer in [*./outputs*](/outputs) folder.
+To facilitate comparison, we provide the output files of text style transfer in [*./outputs*](/outputs) folder.
 
 
 
@@ -54,4 +51,4 @@ To facilitate comparision, we provide the output files of text style transfer in
     year={2022}
 }
 ```
-***Code is coming soon...***
+

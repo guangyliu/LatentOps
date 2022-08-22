@@ -1,3 +1,4 @@
+mkdir -p ckpts
 echo "Download base_yelp.tar.gz"
 
 wget "https://cuhko365-my.sharepoint.com/:u:/g/personal/218019026_link_cuhk_edu_cn/EeLMgN-7D-VAqpOZHWTS2-YBW6ArjF8_qdPvyAM9-SCfmg?e=MuqbaF&download=1" -O ckpts/base_yelp.tar.gz

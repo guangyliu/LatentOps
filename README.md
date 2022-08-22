@@ -32,11 +32,36 @@ bash download_pretrained_models.sh
 ```
     
 ### Prepare Classifiers
-Download and process the classifiers by running the script:
+Download and process the external classifiers by running the script:
  ```shell
  bash download_classifiers.sh
  ```
-    
+## Conditional Generation
+You can do conditional generation by running:
+```shell
+cd code
+bash conditional_generation.sh $1 $2
+```
+$1 represents operators (1 for sentiment, 4 for tense, 33 for formality).
+$2 represents desired labels:
+- sentiment: 0-negative, 1-positive
+- tense: 0-past, 1-present, 2-future
+- formality: 0-informal, 1-formal
+
+For examples, you can run:
+```shell
+# for positive sentences
+bash conditional_generation.sh 1 1
+# for past sentences
+bash conditional_generation.sh 4 0
+# for positive & future sentences
+bash conditional_generation.sh '1,4' '1,2'
+# for positive & future & informal
+bash conditional_generation.sh '1,4,33' '1,2,0'
+# for positive & future & informal and negative & future & informal
+bash conditional_generation.sh '1,4,33' '1,2,0;0,2,0'
+```
+The generated files can be found in */ckpts/model/samples/*
 ## Outputs
 To facilitate comparison, we provide the output files of text style transfer in [*./outputs*](/outputs) folder.
 

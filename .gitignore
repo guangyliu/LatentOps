@@ -1,7 +1,6 @@
 *.ipynb_checkpoints
 data/datasets/*
 apex
-code
 classifiers/*
 ckpts/*
 output_home/*

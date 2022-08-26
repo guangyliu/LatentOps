@@ -61,7 +61,7 @@ bash conditional_generation.sh '1,4,33' '1,2,0'
 # for positive & future & informal and negative & future & informal
 bash conditional_generation.sh '1,4,33' '1,2,0;0,2,0'
 ```
-The generated files can be found in *./ckpts/model/samples/*
+The generated files can be found in */ckpts/model/samples/*
 ## Outputs
 To facilitate comparison, we provide the output files of text style transfer in [*./outputs*](/outputs) folder.
 

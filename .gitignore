@@ -8,3 +8,4 @@ output_home/*
 code/runs
 *__pycache__
 */__pycache__
+*.pyc

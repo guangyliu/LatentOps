@@ -1,6 +1,6 @@
 *.ipynb_checkpoints
 data/datasets/*
-data/dataset.tar.gz
+data/datasets.tar.gz
 apex
 classifiers/*
 ckpts/*

@@ -1,12 +1,11 @@
 # LatentOps [WIP]
-Source code of paper: ***Composable Text Control Operations in Latent Space with Ordinary Differential Equations***
+Source code of paper: ***Composable Text Controls in Latent Space with ODEs***
 
 *https://arxiv.org/abs/2208.00638*
 
 
 ***Code is coming soon...***
 
-The code is based on [*Optimus*](https://github.com/ChunyuanLI/Optimus) and [*LACE*](https://github.com/NVlabs/LACE).
 ## Preparation
 ### Recommended Environment
 We recommend to create a new conda enviroment (named *latentops*) by:
@@ -37,7 +36,7 @@ Download and process the external classifiers by running the script:
  bash download_classifiers.sh
  ```
 ## Conditional Generation
-You can do conditional generation by running:
+You can do conditional generation (default Yelp) by running:
 ```shell
 cd code
 bash conditional_generation.sh $1 $2
@@ -61,9 +60,9 @@ bash conditional_generation.sh '1,4,33' '1,2,0'
 # for positive & future & informal and negative & future & informal
 bash conditional_generation.sh '1,4,33' '1,2,0;0,2,0'
 ```
-The generated files can be found in */ckpts/model/samples/*
+The generated files can be found in *../ckpts/model/sample/* (default: *../ckpts/large_yelp/sample/sampling\*.txt*)
 ## Outputs
-To facilitate comparison, we provide the output files of text style transfer in [*./outputs*](/outputs) folder.
+To facilitate comparison, we provide the output files of text editing with single attribute (text style transfer) in [*./outputs*](/outputs) folder.
 
 
 

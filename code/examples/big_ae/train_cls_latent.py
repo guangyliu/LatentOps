@@ -220,22 +220,49 @@ def save_cls_checkpoint(classifier, optimizer, global_step, args, gan=None, eval
         logger.info("Saving GAN checkpoint to %s", output_gan_dir)
 
 
-def access_latent_label(args, train_dataloader, model_vae):
+# def access_latent_label(args, train_dataloader, model_vae):
+#     """ Train the model """
+#     all_z = np.zeros((0, args.latent_size))
+#     all_label = np.zeros((0), )
+#     epoch_iterator = tqdm(train_dataloader, desc="Creating Latent data", disable=args.local_rank not in [-1, 0])
+#     for step, batch in enumerate(epoch_iterator):
+#         tokenized_text0, tokenized_text1, tokenized_text_lengths = batch
+#         latent_labels = tokenized_text_lengths[:, -1]
+#
+#         inputs = tokenized_text0
+#         inputs = inputs.to(args.device)
+#         model_vae.eval()
+#         with torch.no_grad():
+#             latent_z = model_vae.encode_x(inputs)
+#             all_z = np.append(all_z, latent_z.cpu().numpy(), 0)
+#             all_label = np.append(all_label, latent_labels.numpy(), 0)
+#     return [all_z, all_label]
+def access_latent_label(args, train_dataloader, model_vae, train=True):
     """ Train the model """
-    all_z = np.zeros((0, args.latent_size))
-    all_label = np.zeros((0), )
-    epoch_iterator = tqdm(train_dataloader, desc="Creating Latent data", disable=args.local_rank not in [-1, 0])
-    for step, batch in enumerate(epoch_iterator):
-        tokenized_text0, tokenized_text1, tokenized_text_lengths = batch
-        latent_labels = tokenized_text_lengths[:, -1]
+    npy_file_path = args.train_data_file if train else args.eval_data_file
+    if os.path.exists(npy_file_path+'.npy'):
+        with open(npy_file_path+'.npy', 'rb') as f:
+            all_data = np.load(f)
+            all_z = all_data[:,:-1]
+            all_label = all_data[:,-1]
+    else:
+        all_z = np.zeros((0, args.latent_size))
+        all_label = np.zeros((0), )
+        epoch_iterator = tqdm(train_dataloader, desc="Creating Latent data")
+        for step, batch in enumerate(epoch_iterator):
+            tokenized_text0, tokenized_text1, tokenized_text_lengths = batch
+            latent_labels = tokenized_text_lengths[:, -1]
 
-        inputs = tokenized_text0
-        inputs = inputs.to(args.device)
-        model_vae.eval()
-        with torch.no_grad():
-            latent_z = model_vae.encode_x(inputs)
-            all_z = np.append(all_z, latent_z.cpu().numpy(), 0)
-            all_label = np.append(all_label, latent_labels.numpy(), 0)
+            inputs = tokenized_text0
+            inputs = inputs.to(args.device)
+            model_vae.eval()
+            with torch.no_grad():
+                latent_z = model_vae.encode_x(inputs)
+                all_z = np.append(all_z, latent_z.cpu().numpy(), 0)
+                all_label = np.append(all_label, latent_labels.numpy(), 0)
+        all_data = np.append(all_z,all_label[:,None],1)
+        with open(npy_file_path+'.npy', 'wb') as f:
+            np.save(f,all_data)
     return [all_z, all_label]
 
 
@@ -315,9 +342,13 @@ def train(args, train_dataloader, model_vae, encoder_tokenizer, decoder_tokenize
     loss_gan_g = torch.tensor(0)
     gan_d_weight = 1
     stop_flag = False
+    start_time = time.time()
     for epoch in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
-
+        if best_gan_diff < 20000:
+            use_time = time.time() - start_time
+            start_time = time.time()
+            logger.info("Time for this epoch = %f", use_time)
         for step, batch in enumerate(epoch_iterator):
             # tokenized_text0, _, tokenized_text_lengths = batch
             # latent_labels = tokenized_text_lengths[:, -1]
@@ -958,7 +989,7 @@ def main():
     parser.add_argument('--fix_model', type=int, default=0,
                         help="0: no fix; 1: fix both bert & gpt; 2: fix gpt; 3: fix both bert & gpt, extra layers")
     args = parser.parse_args()
-    model_id = '../output/gpt2_sentiment' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
+    model_id =  '../../Optimus-ODE/output/gpt2_sentiment' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
     print(model_id)
     global model_ppl
     model_ppl = GPT2_.from_pretrained(model_id).cuda()
@@ -1133,14 +1164,14 @@ def main():
             torch.distributed.barrier()  # Barrier to make sure only the first process in distributed training process the dataset, and the others will use the cache
         train_dataloader = build_dataload_and_cache_examples(args, [tokenizer_encoder, tokenizer_decoder],
                                                              evaluate=False)
-        all_z, all_label = access_latent_label(args, train_dataloader, model_vae)
+        all_z, all_label = access_latent_label(args, train_dataloader, model_vae, train=True)
         latent_dataset = LatentDataset(all_z, all_label)
 
         dataloader = DataLoader(latent_dataset, batch_size=args.batch_size,
                                 shuffle=True, num_workers=0)
         eval_dataloader = build_dataload_and_cache_examples(args, [tokenizer_encoder, tokenizer_decoder],
                                                             evaluate=True)
-        eval_z, eval_label = access_latent_label(args, eval_dataloader, model_vae)
+        eval_z, eval_label = access_latent_label(args, eval_dataloader, model_vae, train=False)
         eval_latent_dataset = LatentDataset(eval_z, eval_label)
         if 'gan' in args.train_cls_gan:
             train(args, dataloader, model_vae, tokenizer_encoder, tokenizer_decoder, gan=gan,

@@ -1,23 +1,20 @@
 #!/bin/bash
-#SBATCH -J cls_yelp
-#SBATCH -p p-V100
-#SBATCH -o log/%j.out
-#SBATCH -e log/%j.out
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=4
-#SBATCH --gres=gpu:1
 export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 
-echo "model_size $model_size"
-#data_type='tense'
-train_cls_gan='gan'
+
+train_cls_gan='cls'
  #'yelp_debug' # .9 #_fb1_bert_l_VAE1.0_fx8_64_b64_e50_d0.9 #bert_l_VAE1.0_fx8_64_b64_e50_d1.0 #bert_l_VAE1.0_fx882_64_b64_e50_d1.0 #yelp_weak_optimus #f_pre_amazon_64_b32_e20_beta_1.0_d1.0_3 #$1 #integrated_32_d1.0 #pre_f_sst2_32_b5_e50_d1.0_lr1e-5 #f_pre_integrated_32_b32_e100_beta_1.0_d1.0
 cuda=2
-
-data_type='sentiment' #'tweetsentiment' #sentiment #$2
-gpt_size='base'
-name='yelp'
-
+if [ $1 == 'aug' ]
+then
+  data_type=$2
+  gpt_size=$3
+  name=$4
+else
+  data_type='sentiment' #'tweetsentiment' #sentiment #$2
+   gpt_size='base'
+  name='yelp'
+fi
 data=$gpt_size
 bert_model='prajjwal1/bert-small'
 bert_type='bertu'
@@ -25,8 +22,8 @@ fix_model=84
 latent_size=64
 if [ $train_cls_gan == 'gan' ]
 then
-  epoch=5 # 10
-  batch=64 #32
+  epoch=10 # 10
+  batch=32 #32
   train_data=train_gan.txt
 elif [ $train_cls_gan == 'cls' ]; then
   epoch=50 # 10
@@ -42,8 +39,8 @@ logging_steps=1
 if [ $data_type == 'sentiment' ]
 then
   cls_step=1
-  export TRAIN_FILE=../data/datasets/yelp_data/train.shuf.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelp_data/test.txt #test.txt
+  export TRAIN_FILE=../data/datasets/yelpshort_data/train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
+  export TEST_FILE=../data/datasets/yelpshort_data/test.txt #test.txt
 elif [ $data_type == 'tense' ]
 then
   cls_step=4
@@ -143,7 +140,7 @@ then
   else
     export TRAIN_FILE=../data/datasets/news_data/train_news_200.txt
   fi
-  export TEST_FILE=../data/datasets/news_data/test_200.txt #test.txt
+  export TEST_FILE=../data/datasets/news_data/test_200.txt #test.txt1
   n_classes=3
 else
   echo 'Wrong data_type, EXIT'
@@ -169,8 +166,8 @@ eval_batch=$batch
 dim_target_kl=1.0
 dataset=Yelp_cls
 
-CUDA_VISIBLE_DEVICES=$cuda python examples/big_ae/train_cls_latent.py \
-   --output_dir=../ckpts/debug_base_yelp \
+CUDA_VISIBLE_DEVICES=$cuda python examples/big_ae/train_ddpm_latent.py \
+   --output_dir=../output_home/LM/$data/$name  \
    --dataset $dataset \
    --encoder_model_type=$bert_type \
    --encoder_model_name_or_path=$bert_model \
@@ -197,11 +194,11 @@ CUDA_VISIBLE_DEVICES=$cuda python examples/big_ae/train_cls_latent.py \
    --dim_target_kl $dim_target_kl  --learning_rate 5e-4 \
    --use_pretrained_model \
    --use_pretrained_vae \
-   --checkpoint_dir ../ckpts/debug_base_yelp --gloabl_step_eval 1  \
+   --checkpoint_dir ../output_home/LM/$data/$name --gloabl_step_eval 1 \
    --n_classes $n_classes --train_cls_gan $train_cls_gan --n_cyc 8  --save_step $cls_step  --fix_model $fix_model  #--fp16 # --is_tense
 # save_step 1: sentiment 2: amazon 3: imdb
 # bash lace_sampling_length.sh $name
 # echo 'lgylgy_sampling'
 #bash lace_transfer_yelpnew.sh $name $data_type
 #echo 'lgylgy_transfer'
-#bash conditional_generation.sh $name $latent_size $data_type
+#bash lace_sampling_multiple.sh $name $latent_size $data_type

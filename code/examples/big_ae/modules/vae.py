@@ -7,6 +7,7 @@ from .utils import log_sum_exp
 import pdb
 import numpy as np
 import logging
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -779,6 +780,13 @@ class GAN(nn.Module):
             self.latent_generator = nn.Sequential(
                 nn.Linear(self.nz, self.nz),
             )
+            # self.latent_generator = nn.Sequential(
+            #     nn.Linear(self.nz, self.nz*2),
+            #     nn.LeakyReLU(),
+            #     nn.Linear(self.nz*2, self.nz),
+            #     nn.LeakyReLU(),
+            #     nn.Linear(self.nz, self.nz)
+            # )
         if 'news' in args.output_dir:
             self.latent_generator = nn.Sequential(
                 nn.Linear(self.nz, self.nz),
@@ -786,6 +794,11 @@ class GAN(nn.Module):
             )
             print('news in')
         self.latent_discriminator = nn.Linear(self.nz, 1)
+        # self.latent_discriminator = nn.Sequential(
+        #     nn.Linear(self.nz, self.nz),
+        #     nn.LeakyReLU(),
+        #     nn.Linear(self.nz, 1))
+
         # self.latent_generator = nn.Sequential(
         #     nn.Dropout(0.5),
         #     nn.Linear(self.nz, self.nz),
@@ -1198,3 +1211,226 @@ class Similarity(nn.Module):
 
     def forward(self, x, y):
         return self.cos(x, y) / self.temp
+
+def ddpm_schedules(beta1: float, beta2: float, T: int) -> Dict[str, torch.Tensor]:
+    """
+    Returns pre-computed schedules for DDPM sampling, training process.
+    """
+    assert beta1 < beta2 < 1.0, "beta1 and beta2 must be in (0, 1)"
+
+    beta_t = (beta2 - beta1) * torch.arange(0, T + 1, dtype=torch.float32) / T + beta1
+    sqrt_beta_t = torch.sqrt(beta_t)
+    alpha_t = 1 - beta_t
+    log_alpha_t = torch.log(alpha_t)
+    alphabar_t = torch.cumsum(log_alpha_t, dim=0).exp()
+
+    sqrtab = torch.sqrt(alphabar_t)
+    sqrta = torch.sqrt(alpha_t)
+    oneover_sqrta = 1 / sqrta
+    mab = 1 - alphabar_t
+    sqrtmab = torch.sqrt(mab)
+    mab_over_sqrtmab_inv = (1 - alpha_t) / sqrtmab
+
+    sigma = sqrtmab / sqrtab
+    sigma_diff = sigma[1:] - sigma[:-1]
+    return {
+        "beta_t": beta_t,
+        "alpha_t": alpha_t,  # \alpha_t
+        "sqrta": sqrta,
+        "oneover_sqrta": oneover_sqrta,  # 1/\sqrt{\alpha_t}
+        "sqrt_beta_t": sqrt_beta_t,  # \sqrt{\beta_t}
+        "alphabar_t": alphabar_t,  # \bar{\alpha_t}
+        "sqrtab": sqrtab,  # \sqrt{\bar{\alpha_t}}
+        "mab": mab,
+        "sqrtmab": sqrtmab,  # \sqrt{1-\bar{\alpha_t}}
+        "mab_over_sqrtmab": mab_over_sqrtmab_inv,  # (1-\alpha_t)/\sqrt{1-\bar{\alpha_t}}
+        # "sigma" : sigma,
+        "diff_sigma": sigma_diff,
+    }
+
+blk_linear = lambda ic, oc: nn.Sequential(
+    nn.Linear(ic, oc),
+    nn.LeakyReLU(),
+)
+
+class TimeSiren(nn.Module):
+    def __init__(self, emb_dim: int) -> None:
+        super(TimeSiren, self).__init__()
+        self.emb_dim = emb_dim
+        self.lin1 = nn.Linear(1, emb_dim, bias=False)
+        self.lin2 = nn.Linear(emb_dim, emb_dim)
+        self.act = nn.LeakyReLU()
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.view(-1, 1)
+        # x = torch.sin(self.lin1(x))
+        # x = self.lin2(x)
+        x = self.lin1(x)
+        x = self.act(x)
+        x = self.lin2(x)
+        x = torch.sin(x)
+        return x
+
+class LinearModel(nn.Module):
+    def __init__(self, latent_dim=64):
+        super(LinearModel, self).__init__()
+        self.timeembed = TimeSiren(latent_dim)
+        self.linear = nn.Sequential(
+            blk_linear(latent_dim, latent_dim*2 ),
+            blk_linear(latent_dim * 2, latent_dim),
+            nn.Linear(latent_dim,latent_dim)
+        )
+
+    def forward(self, x, t):
+        temb = self.timeembed(t)
+        return self.linear(x+temb)
+
+class DDPM(nn.Module):
+    def __init__(
+        self,
+        eps_model: nn.Module,
+        betas: Tuple[float, float],
+        n_T: int,
+        criterion: nn.Module = nn.MSELoss(),
+    ) -> None:
+        super(DDPM, self).__init__()
+        self.eps_model = eps_model
+
+        # register_buffer allows us to freely access these tensors by name. It helps device placement.
+        for k, v in ddpm_schedules(betas[0], betas[1], n_T).items():
+            self.register_buffer(k, v)
+
+        self.n_T = n_T
+        self.criterion = criterion
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Makes forward diffusion x_t, and tries to guess epsilon value from x_t using eps_model.
+        This implements Algorithm 1 in the paper.
+        """
+
+        _ts = torch.randint(1, self.n_T, (x.shape[0],)).to(
+            x.device
+        )  # t ~ Uniform(0, n_T)
+        eps = torch.randn_like(x)  # eps ~ N(0, 1)
+        x_t = (
+            self.sqrtab[_ts, None, None, None] * x
+            + self.sqrtmab[_ts, None, None, None] * eps
+        )  # This is the x_t, which is sqrt(alphabar) x_0 + sqrt(1-alphabar) * eps
+        # We should predict the "error term" from this x_t. Loss is what we return.
+
+        return self.criterion(eps, self.eps_model(x_t, _ts / self.n_T))
+
+    def add_noise(self, x_i: torch.Tensor) -> torch.Tensor:
+        """
+        Makes forward diffusion x_t, and tries to guess epsilon value from x_t using eps_model.
+        This implements Algorithm 1 in the paper.
+        """
+        for i in range(1, self.n_T):
+            eps = self.eps_model(x_i, torch.tensor(i).to(x_i.device) / self.n_T)
+            x_i = self.sqrtab[i+1] * (x_i/self.sqrtab[i] + eps*self.diff_sigma[i])
+        return x_i
+
+    def sample(self, n_sample: int, size, device) -> torch.Tensor:
+
+        x_i = torch.randn(n_sample, *size).to(device)  # x_T ~ N(0, 1)
+        # This samples accordingly to Algorithm 2. It is exactly the same logic.
+        for i in range(self.n_T, 0, -1):
+            z = torch.randn(n_sample, *size).to(device) if i > 1 else 0
+            eps = self.eps_model(x_i, torch.tensor(i).to(x_i.device) / self.n_T)
+            x_i = (
+                self.oneover_sqrta[i] * (x_i - eps * self.mab_over_sqrtmab[i])
+                + self.sqrt_beta_t[i] * z
+            )
+
+        return x_i
+    def sample_one(self, n_sample: int, size, device) -> torch.Tensor:
+
+        x_i = torch.randn( n_sample, *size).to(device)  # x_T ~ N(0, 1)
+        # x_i = x_i.repeat(n_sample,1)
+        # This samples accordingly to Algorithm 2. It is exactly the same logic.
+        for i in range(self.n_T, 0, -1):
+            z = torch.randn(n_sample, *size).to(device) if i > 1 else 0
+            eps = self.eps_model(x_i, torch.tensor(i).to(x_i.device) / self.n_T)
+            # predict noise: epsilon( x_t, t)
+            # score: - eps / self.sqrtmab
+            score_flag = 2
+            if score_flag == 0: # score model
+                score = - eps / self.sqrtmab[i]
+                x_i = (
+                    self.oneover_sqrta[i] * (x_i + self.beta_t[i] * score) + self.sqrt_beta_t[i] * z
+                )
+            elif score_flag == 1: # DDPM
+                x_i = (
+                    self.oneover_sqrta[i] * (x_i - eps * self.mab_over_sqrtmab[i])
+                    + self.sqrt_beta_t[i] * z
+                )
+            elif score_flag == 2: # DDIM
+                eta = 0.0
+                sigma_ = eta * self.sqrtmab[i-1] / self.sqrtmab[i] * self.sqrt_beta_t[i]
+                # sigma_ = torch.sqrt(1- self.alphabar_t[i] / self.alphabar_t[i-1])
+                x_i = ( self.oneover_sqrta[i] * (x_i - (self.sqrtmab[i] - self.sqrta[i] * torch.sqrt(self.mab[i-1] - sigma_**2)) * eps ) + sigma_ * z)
+        return x_i
+    def sample_posterior(self, x_i, device, score_flag=2) -> torch.Tensor:
+
+        # x_i = x_i.repeat(n_sample,1)
+        # This samples accordingly to Algorithm 2. It is exactly the same logic.
+        for i in range(self.n_T, 0, -1):
+            z = torch.randn_like(x_i).to(device) if i > 1 else 0
+            eps = self.eps_model(x_i, torch.tensor(i).to(x_i.device) / self.n_T)
+            # predict noise: epsilon( x_t, t)
+            # score: - eps / self.sqrtmab
+            # score_flag = 2
+            if score_flag == 0: # score model
+                score = - eps / self.sqrtmab[i]
+                x_i = (
+                    self.oneover_sqrta[i] * (x_i + self.beta_t[i] * score) + self.sqrt_beta_t[i] * z
+                )
+            elif score_flag == 1: # DDPM
+                x_i = (
+                    self.oneover_sqrta[i] * (x_i - eps * self.mab_over_sqrtmab[i])
+                    + self.sqrt_beta_t[i] * z
+                )
+            elif score_flag == 2: # DDIM
+                eta = 0.0
+                sigma_ = eta * self.sqrtmab[i-1] / self.sqrtmab[i] * self.sqrt_beta_t[i]
+                # sigma_ = torch.sqrt(1- self.alphabar_t[i] / self.alphabar_t[i-1])
+                x_i = ( self.oneover_sqrta[i] * (x_i - (self.sqrtmab[i] - self.sqrta[i] * torch.sqrt(self.mab[i-1] - sigma_**2)) * eps ) + sigma_ * z)
+        return x_i
+
+    def em_sampler(self,n_sample, size, device='cuda'):
+        t = torch.ones(n_sample, device=device) # initial t = 1
+        init_x = torch.randn(n_sample, *size).to(device)
+
+    # def sde(self,):
+    #     # @title Set up the SDE
+    #     device = 'cuda'  # @param ['cuda', 'cpu'] {'type':'string'}
+    #
+    #     def marginal_prob_std(t, sigma):
+    #         """Compute the mean and standard deviation of $p_{0t}(x(t) | x(0))$.
+    #
+    #         Args:
+    #           t: A vector of time steps.
+    #           sigma: The $\sigma$ in our SDE.
+    #
+    #         Returns:
+    #           The standard deviation.
+    #         """
+    #         t = torch.tensor(t, device=device)
+    #         return torch.sqrt((sigma ** (2 * t) - 1.) / 2. / np.log(sigma))
+    #
+    #     def diffusion_coeff(t, sigma):
+    #         """Compute the diffusion coefficient of our SDE.
+    #
+    #         Args:
+    #           t: A vector of time steps.
+    #           sigma: The $\sigma$ in our SDE.
+    #
+    #         Returns:
+    #           The vector of diffusion coefficients.
+    #         """
+    #         return torch.tensor(sigma ** t, device=device)
+    #
+    #     sigma = 25.0  # @param {'type':'number'}
+    #     marginal_prob_std_fn = functools.partial(marginal_prob_std, sigma=sigma)
+    #     diffusion_coeff_fn = functools.partial(diffusion_coeff, sigma=sigma)
+

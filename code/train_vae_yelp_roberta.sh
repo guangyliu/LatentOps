@@ -3,7 +3,6 @@ export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 #source ../bashrc
 
 data=yelp
-echo $data
 dataset=$data
 #
 #export TRAIN_FILE=../data/datasets/news_data/train.shuf.lower.merge
@@ -16,8 +15,8 @@ dataset=$data
 #
 #export TRAIN_FILE=../data/datasets/amazon_data/train.shuf.merge
 #export TEST_FILE=../data/datasets/amazon_data/test.merge
-#TRAIN_FILE=../data/datasets/yelpshort'_'data/train.shuf.merge
-#TEST_FILE=../data/datasets/yelpshort'_'data/test.merge
+TRAIN_FILE=../data/datasets/yelp_data/train.shuf.merge
+TEST_FILE=../data/datasets/yelp_data/test.merge
 #TRAIN_FILE=../data/datasets/snli_data/train.shuf.merge
 #TEST_FILE=../data/datasets/snli_data/test.txt
 
@@ -25,8 +24,8 @@ dataset=$data
 #TRAIN_FILE=../data/datasets/commongen_data/commongen/train.shuf.merge
 #TEST_FILE=../data/datasets/commongen_data/commongen/test.merge
 
-TRAIN_FILE=../data/datasets/yelp_data/train.debug.merge
-TEST_FILE=../data/datasets/yelp_data/test.debug.merge
+#TRAIN_FILE=../data/datasets/yelp_data/train.debug.merge
+#TEST_FILE=../data/datasets/yelp_data/test.debug.merge
 #TRAIN_FILE=../data/datasets/gyafc/train.merge
 #TEST_FILE=../data/datasets/gyafc/valid.merge
  # 0. train all
@@ -44,7 +43,7 @@ fix_model=84
 gpt_size='base'
 batch=64 #64
 accumulation_steps=1
-beta=1.0
+beta=0.9
 
 args=" --disable_bar $1" #--disable_bar --no_save --disable_bar --disable_bar
 
@@ -101,7 +100,7 @@ fi
 #/home/yiwenhu/data_med4/data4/Optimus/output/gpt2-xl
  # ../output/gpt2 #
 name='v8_'$model's_'$gpt_size'_'$prefix'_fx'$fix_model'_'$latent_size'_'b$batch'_'e$epoch'_d'$dim_target_kl #'_d'$dim_target_kl'_lr'$learning_rate
-CUDA_VISIBLE_DEVICES=0 python examples/big_ae/run_lm_vae_training.py \
+CUDA_VISIBLE_DEVICES=1 python examples/big_ae/run_lm_vae_training.py \
     --output_dir=../output_home/LM/$data/$name  \
     --dataset $dataset \
     --encoder_model_type=$model \

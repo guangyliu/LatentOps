@@ -56,7 +56,7 @@ MODEL_CLASSES = {
 from transformers import GPT2LMHeadModel as GPT2_
 from transformers import GPT2TokenizerFast
 
-model_id = '../output/gpt2_sentiment'  # _sentiment' #amazon'
+model_id =  '../../Optimus-ODE/output/gpt2_sentiment'  # _sentiment' #amazon'1
 model_ppl = GPT2_.from_pretrained(model_id).cuda()
 tokenizer_ppl = GPT2TokenizerFast.from_pretrained(model_id)
 

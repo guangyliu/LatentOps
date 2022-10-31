@@ -20,7 +20,7 @@ using a masked language modeling (MLM) loss.
 """
 from __future__ import absolute_import, division, print_function
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import argparse
 import logging
@@ -38,7 +38,7 @@ from transformers import AutoTokenizer, AdamW
 from transformers import get_polynomial_decay_schedule_with_warmup
 
 from examples.big_ae.modules import GAN  # GANVAE as GAN
-from examples.big_ae.modules import VAE, DenseEmbedder, sample_sequence_conditional, DDPM, LinearModel
+from examples.big_ae.modules import VAE, DenseEmbedder, sample_sequence_conditional, DDPM, LinearModel, MLPSkipNet
 from examples.big_ae.utils import (BucketingDataLoader, TextDataset_Split,
                    TextDataset_2Tokenizers, frange_cycle_zero_linear)
 import time
@@ -200,8 +200,10 @@ def save_cls_checkpoint(classifier, optimizer, global_step, args, gan=None, eval
 def access_latent_label(args, train_dataloader, model_vae, train=True):
     """ Train the model """
     npy_file_path = args.train_data_file if train else args.eval_data_file
-    if os.path.exists(npy_file_path+'.npy'):
-        with open(npy_file_path+'.npy', 'rb') as f:
+    whole_path = npy_file_path + '_' +args.output_dir.split('/')[-1]+ '.npy'
+    print(whole_path)
+    if os.path.exists(whole_path):
+        with open(whole_path, 'rb') as f:
             all_data = np.load(f)
             all_z = all_data[:,:-1]
             all_label = all_data[:,-1]
@@ -221,7 +223,7 @@ def access_latent_label(args, train_dataloader, model_vae, train=True):
                 all_z = np.append(all_z, latent_z.cpu().numpy(), 0)
                 all_label = np.append(all_label, latent_labels.numpy(), 0)
         all_data = np.append(all_z,all_label[:,None],1)
-        with open(npy_file_path+'.npy', 'wb') as f:
+        with open(whole_path, 'wb') as f:
             np.save(f,all_data)
     return [all_z, all_label]
 
@@ -284,6 +286,10 @@ def train_ddpm(args, train_dataloader, model_vae, encoder_tokenizer, decoder_tok
     best_gan_diff = 200
     best_diff_cnt = 0
     start_time = time.time()
+    results = calc_ppl_lgy_ddpm(
+        model_vae, encoder_tokenizer, decoder_tokenizer, args, 1,
+        ddpm, model_ppl, tokenizer_ppl
+    )
     for epoch in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         if best_gan_diff < 200:
@@ -424,15 +430,15 @@ def calc_ppl_lgy_ddpm(model_vae, encoder_tokenizer, decoder_tokenizer, args, ns=
         return out_text
     for _ in trange(num_epoch, desc="Evaluating PPL", disable=True):
 
-        latent_z = ddpm.sample_one(bz,(64,), args.device )
+        latent_z = ddpm.sample(bz,(args.latent_size,), args.device )
         # text = 'it is very good !'
         # latent_z = text2latent(text)
         # noisy_z = ddpm.add_noise(latent_z)
         # latent_z1 = ddpm.sample_posterior(noisy_z, args.device, score_flag=2)
         # out_text = out_(latent_z1[0,0])
-        import pdb
-        pdb.set_trace()
-        text = noise_denoise('unfortunately the system is never coming back .\n', 2)
+        # import pdb
+        # pdb.set_trace()
+        # text = noise_denoise('unfortunately the system is never coming back .\n', 2)
 
         # latent_z = gan.generate_z(bz, eval=True)
 
@@ -508,7 +514,7 @@ def main():
     ## Required parameters
     parser.add_argument("--train_data_file", default='../data/datasets/yelp_data/train.shuf.txt', type=str,
                         help="The input training data file (a text file).")
-    parser.add_argument("--checkpoint_dir", default='../ckpts/base_yelp', type=str,
+    parser.add_argument("--checkpoint_dir", default='../output_home/LM/yelp/v8_bertus_base_VAE0.1_fx84_256_b64_e100_d0.9', type=str,
                         help="The directory where checkpoints are saved.")
     parser.add_argument("--output_dir", default='../ckpts/base_yelp', type=str,
                         help="The output directory where the model predictions and checkpoints will be written.")
@@ -653,7 +659,8 @@ def main():
                         help="0: no fix; 1: fix both bert & gpt; 2: fix gpt; 3: fix both bert & gpt, extra layers")
     parser.add_argument('--nt', type=int, default=2000, help="T for diffusion process")
     args = parser.parse_args()
-    model_id = '../../Optimus-ODE/output/gpt2_sentiment' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
+    args.output_dir = args.checkpoint_dir
+    model_id = 'gpt2' #'../../Optimus-ODE/output/gpt2_sentiment' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
     print(model_id)
     global model_ppl
     model_ppl = GPT2_.from_pretrained(model_id).cuda()
@@ -723,7 +730,7 @@ def main():
     logger.info("Pre-trained Optimus is successfully loaded")
     model_vae.to(args.device)  #
 
-    ddpm = DDPM(eps_model=LinearModel(64), betas=(1e-4, 0.02), n_T=args.nt,)
+    ddpm = DDPM(eps_model=MLPSkipNet(args.latent_size), betas=(1e-4, 0.02), n_T=args.nt,)
     ddpm.to(args.device)
     ddpm.apply(weights_init_rondom)
     import copy

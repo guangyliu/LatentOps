@@ -1270,6 +1270,18 @@ class TimeSiren(nn.Module):
         x = torch.sin(x)
         return x
 
+class ResidualLinear(nn.Module):
+    def __init__(self, latent_dim=64):
+        super(ResidualLinear, self).__init__()
+        self.norm = nn.LayerNorm(latent_dim,1e-6)
+        self.linear = blk_linear(latent_dim, latent_dim)
+        self.dropout = nn.Dropout(0.1)
+    def forward(self, x):
+        y = self.norm(x)
+        y = self.linear(y)
+        # y = self.dropout(y)
+        # y = x + y
+        return y
 class LinearModel(nn.Module):
     def __init__(self, latent_dim=64):
         super(LinearModel, self).__init__()
@@ -1279,6 +1291,12 @@ class LinearModel(nn.Module):
             blk_linear(latent_dim * 2, latent_dim),
             nn.Linear(latent_dim,latent_dim)
         )
+        # self.linear = nn.Sequential(
+        #     ResidualLinear(),
+        #     ResidualLinear(),
+        #     nn.LayerNorm(latent_dim,eps=1e-6),
+        #     # nn.Linear(latent_dim,latent_dim)
+        # )
 
     def forward(self, x, t):
         temb = self.timeembed(t)
@@ -1313,8 +1331,8 @@ class DDPM(nn.Module):
         )  # t ~ Uniform(0, n_T)
         eps = torch.randn_like(x)  # eps ~ N(0, 1)
         x_t = (
-            self.sqrtab[_ts, None, None, None] * x
-            + self.sqrtmab[_ts, None, None, None] * eps
+            self.sqrtab[_ts, None] * x
+            + self.sqrtmab[_ts, None] * eps
         )  # This is the x_t, which is sqrt(alphabar) x_0 + sqrt(1-alphabar) * eps
         # We should predict the "error term" from this x_t. Loss is what we return.
 
@@ -1336,7 +1354,9 @@ class DDPM(nn.Module):
         # This samples accordingly to Algorithm 2. It is exactly the same logic.
         for i in range(self.n_T, 0, -1):
             z = torch.randn(n_sample, *size).to(device) if i > 1 else 0
-            eps = self.eps_model(x_i, torch.tensor(i).to(x_i.device) / self.n_T)
+            ts_ =torch.tensor(i).to(x_i.device) / self.n_T
+            ts_=ts_.repeat(n_sample)
+            eps = self.eps_model(x_i, ts_)
             x_i = (
                 self.oneover_sqrta[i] * (x_i - eps * self.mab_over_sqrtmab[i])
                 + self.sqrt_beta_t[i] * z
@@ -1434,3 +1454,158 @@ class DDPM(nn.Module):
     #     marginal_prob_std_fn = functools.partial(marginal_prob_std, sigma=sigma)
     #     diffusion_coeff_fn = functools.partial(diffusion_coeff, sigma=sigma)
 
+
+def timestep_embedding(timesteps, dim, max_period=10000):
+    """
+    Create sinusoidal timestep embeddings.
+    :param timesteps: a 1-D Tensor of N indices, one per batch element.
+                      These may be fractional.
+    :param dim: the dimension of the output.
+    :param max_period: controls the minimum frequency of the embeddings.
+    :return: an [N x dim] Tensor of positional embeddings.
+    """
+    half = dim // 2
+    freqs = torch.exp(-math.log(max_period) *
+                   torch.arange(start=0, end=half, dtype=torch.float32) /
+                   half).to(device=timesteps.device)
+    args = timesteps[:, None].float() * freqs[None]
+    embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
+    if dim % 2:
+        embedding = torch.cat(
+            [embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
+    return embedding
+
+class MLPSkipNet(nn.Module):
+    def __init__(self, latent_dim):
+        super().__init__()
+        # time embedding
+        self.time_embed_dim = 64
+        self.time_embed = nn.Sequential(
+            nn.Linear(self.time_embed_dim, latent_dim),
+            nn.SiLU(),
+            nn.Linear(latent_dim,latent_dim)
+        )
+        # MLP layers
+        self.activation = 'silu'
+        use_norm = True
+        num_layers = 3
+        num_hid_channels = 512
+        num_channels = 256
+        condition_bias=1
+        self.skip_layers = list(range(1, num_layers))
+        self.layers = nn.ModuleList([])
+        for i in range(num_layers):
+            if i == 0:
+                act = self.activation
+                norm = use_norm
+                cond = True
+                a, b = num_channels, num_hid_channels
+                dropout = 0
+            elif i == num_layers - 1:
+                act = 'none'
+                norm = False
+                cond = False
+                a, b = num_hid_channels, num_channels
+                dropout = 0
+            else:
+                act = self.activation
+                norm = use_norm
+                cond = True
+                a, b = num_hid_channels, num_hid_channels
+                dropout = 0
+
+            if i in self.skip_layers:
+                a += num_channels
+
+            self.layers.append(
+                MLPLNAct(
+                    a,
+                    b,
+                    norm=norm,
+                    activation=act,
+                    cond_channels=num_channels,
+                    use_cond=cond,
+                    condition_bias=condition_bias,
+                    dropout=dropout,
+                ))
+        self.last_act = nn.Identity()
+
+    def forward(self, x, t,):
+        # time embedding
+        t *= 2000
+        t = timestep_embedding(t, self.time_embed_dim)
+        cond = self.time_embed(t)
+        # layers
+        h = x
+        for i in range(len(self.layers)):
+            if i in self.skip_layers:
+                h = torch.cat([h, x], dim=1)
+            h = self.layers[i].forward(x=h, cond=cond)
+        h = self.last_act(h)
+        return h
+
+class MLPLNAct(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        norm: bool,
+        activation: str,
+        use_cond: bool,
+        cond_channels: int,
+        condition_bias: float = 0,
+        dropout: float = 0,
+    ):
+        super().__init__()
+        self.condition_bias = condition_bias
+        self.use_cond = use_cond
+        self.activation = activation
+        self.linear = nn.Linear(in_channels, out_channels)
+        if activation == 'silu':
+            self.act = nn.SiLU()
+        else:
+            self.act = nn.Identity()
+        if self.use_cond:
+            self.linear_emb = nn.Linear(cond_channels, out_channels)
+            self.cond_layers = nn.Sequential(self.act, self.linear_emb)
+        if norm:
+            self.norm = nn.LayerNorm(out_channels)
+        else:
+            self.norm = nn.Identity()
+
+        if dropout > 0:
+            self.dropout = nn.Dropout(p=dropout)
+        else:
+            self.dropout = nn.Identity()
+
+        self.init_weights()
+
+    def init_weights(self):
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                if self.activation == 'silu':
+                    nn.init.kaiming_normal_(module.weight,
+                                             a=0,
+                                            nonlinearity='relu')
+                else:
+                    pass
+
+    def forward(self, x, cond=None):
+        x = self.linear(x)
+        if self.use_cond:
+            # (n, c) or (n, c * 2)
+            cond = self.cond_layers(cond)
+            cond = (cond, None)
+
+            # scale shift first
+            x = x * (self.condition_bias + cond[0])
+            if cond[1] is not None:
+                x = x + cond[1]
+            # then norm
+            x = self.norm(x)
+        else:
+            # no condition
+            x = self.norm(x)
+        x = self.act(x)
+        x = self.dropout(x)
+        return x

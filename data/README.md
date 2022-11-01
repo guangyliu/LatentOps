@@ -15,4 +15,4 @@ We provide Yelp review dataset and Amazon review dataset in *datasets* folder.
 
 
 ## For Better Initialization (GAN)
-- *train_gan.txt*: Randonly selected training samples without labels for training GAN.
+- *train_gan.txt*: Randomly selected training samples without labels for training GAN.

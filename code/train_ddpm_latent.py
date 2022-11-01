@@ -20,7 +20,7 @@ using a masked language modeling (MLM) loss.
 """
 from __future__ import absolute_import, division, print_function
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 import argparse
 import logging
@@ -514,7 +514,7 @@ def main():
     ## Required parameters
     parser.add_argument("--train_data_file", default='../data/datasets/yelp_data/train.shuf.txt', type=str,
                         help="The input training data file (a text file).")
-    parser.add_argument("--checkpoint_dir", default='../output_home/LM/yelp/v8_bertus_base_VAE0.1_fx84_256_b64_e100_d0.9', type=str,
+    parser.add_argument("--checkpoint_dir", default='../ckpts/base_yelp', type=str,
                         help="The directory where checkpoints are saved.")
     parser.add_argument("--output_dir", default='../ckpts/base_yelp', type=str,
                         help="The output directory where the model predictions and checkpoints will be written.")
@@ -660,7 +660,7 @@ def main():
     parser.add_argument('--nt', type=int, default=2000, help="T for diffusion process")
     args = parser.parse_args()
     args.output_dir = args.checkpoint_dir
-    model_id = 'gpt2' #'../../Optimus-ODE/output/gpt2_sentiment' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
+    model_id = '../classifiers/gpt2_yelp' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
     print(model_id)
     global model_ppl
     model_ppl = GPT2_.from_pretrained(model_id).cuda()
@@ -731,6 +731,7 @@ def main():
     model_vae.to(args.device)  #
 
     ddpm = DDPM(eps_model=MLPSkipNet(args.latent_size), betas=(1e-4, 0.02), n_T=args.nt,)
+    # ddpm = DDPM(eps_model=LinearModel(args.latent_size), betas=(1e-4, 0.02), n_T=args.nt, )
     ddpm.to(args.device)
     ddpm.apply(weights_init_rondom)
     import copy

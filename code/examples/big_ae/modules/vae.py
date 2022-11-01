@@ -1488,9 +1488,9 @@ class MLPSkipNet(nn.Module):
         # MLP layers
         self.activation = 'silu'
         use_norm = True
-        num_layers = 3
-        num_hid_channels = 512
-        num_channels = 256
+        num_layers = 5
+        num_hid_channels = latent_dim*4
+        num_channels = latent_dim
         condition_bias=1
         self.skip_layers = list(range(1, num_layers))
         self.layers = nn.ModuleList([])

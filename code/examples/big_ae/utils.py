@@ -1112,7 +1112,6 @@ def calc_iwnll(model_vae, eval_dataloader, args, ns=20):
         # not predict start symbol
         report_num_words += x_lengths[:, 1].sum().item()
         report_num_sents += args.eval_batch_size
-
         with torch.no_grad():
             loss, loss_rc, loss_kl = model_vae.loss_iw(x0, x1, nsamples=1, ns=1)
 

@@ -64,6 +64,24 @@ The generated files can be found in *../ckpts/model/sample/* (default: *../ckpts
 ## Outputs
 To facilitate comparison, we provide the output files of text editing with single attribute (text style transfer) in [*./outputs*](/outputs) folder.
 
+## Train Your Own Latent Model (VAE)
+Modify the path of data file in *code/train_vae.sh*
+```shell
+dataset=your_dataset_name
+# e.g., dataset=yelp
+TRAIN_FILE=path_to_train_data_file 
+# e.g., TRAIN_FILE=../data/datasets/yelp_data/train.shuf.merge
+TEST_FILE=path_to_test_data_file
+# e.g., TEST_FILE=../data/datasets/yelp_data/test.merge
+```
+The structure of the data file: one line one sentence. See *../data/datasets/yelp_data/test.merge* for example.
+
+Then run the script to train a VAE
+```shell
+cd code
+bash train_vae.sh
+```
+The checkpoints will be saved in *../ckpts/LM/$dataset/$name* by default. You also can find the tensorboard logs in *code/runs/$dataset*
 
 
 ## Cite

@@ -4,7 +4,7 @@ export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 
 train_cls_gan='cls'
  #'yelp_debug' # .9 #_fb1_bert_l_VAE1.0_fx8_64_b64_e50_d0.9 #bert_l_VAE1.0_fx8_64_b64_e50_d1.0 #bert_l_VAE1.0_fx882_64_b64_e50_d1.0 #yelp_weak_optimus #f_pre_amazon_64_b32_e20_beta_1.0_d1.0_3 #$1 #integrated_32_d1.0 #pre_f_sst2_32_b5_e50_d1.0_lr1e-5 #f_pre_integrated_32_b32_e100_beta_1.0_d1.0
-cuda=2
+cuda=0
 if [ $1 == 'aug' ]
 then
   data_type=$2
@@ -39,109 +39,20 @@ logging_steps=1
 if [ $data_type == 'sentiment' ]
 then
   cls_step=1
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelpshort_data/test.txt #test.txt
+  export TRAIN_FILE=../data/datasets/yelp_data/train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
+  export TEST_FILE=../data/datasets/yelp_data/test.txt #test.txt
 elif [ $data_type == 'tense' ]
 then
   cls_step=4
   n_classes=3
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelpshort_data/test_$data_type.txt  #test.txt
+  export TRAIN_FILE=../data/datasets/yelp_data/train_tense.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
+  export TEST_FILE=../data/datasets/yelp_data/test_tense.txt  #test.txt
 elif [ $data_type == 'formality' ]
 then
   cls_step=33
   n_classes=2
   export TRAIN_FILE=../data/datasets/gyafc/train_formal.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
   export TEST_FILE=../data/datasets/gyafc/test_formal.txt  #test.txt
-elif [ $data_type == 'politeness' ]
-then
-  cls_step=36
-  n_classes=2
-  export TRAIN_FILE=../data/datasets/politeness_data/train_politeness.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/politeness_data/test_politeness.txt  #test.txt
-elif [ $data_type == 'humor' ]
-then
-  cls_step=37
-  n_classes=2
-  export TRAIN_FILE=../data/datasets/imagecaption/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/imagecaption/test_$data_type.txt  #test.txt
-elif [ $data_type == 'tweetemotion' ]
-then
-  cls_step=34
-  n_classes=4
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelpshort_data/test_$data_type.txt  #test.txt
-  elif [ $data_type == 'tweetsentiment' ]
-then
-  cls_step=35
-  n_classes=3
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelpshort_data/test_$data_type.txt  #test.txt
-elif [ $data_type == 'adj' ]
-then
-  cls_step=10
-  n_classes=2
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelpshort_data/test_$data_type.txt  #test.txt
-elif [ $data_type == 'pp' ]
-then
-  cls_step=11
-  n_classes=3
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelpshort_data/test_$data_type.txt  #test.txt
-elif [ $data_type == 'sub' ]
-then
-  cls_step=12
-  n_classes=2
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/yelpshort_data/test_$data_type.txt  #test.txt
-elif [ $data_type == 'passive' ]
-then
-  cls_step=13
-  n_classes=2
-  export TRAIN_FILE=../data/datasets/styleptb_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/styleptb_data/test_$data_type.txt  #test.txt
-elif [ $data_type == 'pp_position' ]
-then
-  cls_step=14
-  n_classes=2
-  export TRAIN_FILE=../data/datasets/styleptb_data/train_$data_type.txt  #train_gan.txt #test_ref.shuf.txt #yelpshort_data/train_cls_1000.txt #train_pos.txt #train_cls_1000.txt # #batch=5 epoch 50
-  export TEST_FILE=../data/datasets/styleptb_data/test_$data_type.txt  #test.txt
-elif [ $data_type == 'amazon' ]
-then
-  cls_step=2
-#  data=amazon
-  export TRAIN_FILE=../data/datasets/amazon_data/train_cls_200.txt  #train_cls_1000.txt
-  export TEST_FILE=../data/datasets/amazon_data/test_cls_200.txt #test_cls_200.txt
-elif [ $data_type == 'length' ]
-then
-  cls_step=5
-#  data=yelpnew
-  n_classes=3
-  export TRAIN_FILE=../data/datasets/yelpshort_data/train_length_200.txt
-  export TEST_FILE=../data/datasets/yelpshort_data/train_length_200.txt
-
-elif [ $data_type == 'semeval' ]
-then
-  cls_step=6
-#  data=semeval
-  export TRAIN_FILE=../data/datasets/semeval_data/train.txt
-  export TEST_FILE=../data/datasets/semeval_data/test.txt
-  n_classes=2
-elif [ $data_type == 'news' ]
-then
-  cls_step=7
-#  data=news
-  num_data=${name:5}
-  echo "num_data$num_data"
-  if [ $train_cls_gan == 'gan' ]
-  then
-    export TRAIN_FILE=../data/datasets/news_data/test_10000.txt  #batch=5 epoch 50
-  else
-    export TRAIN_FILE=../data/datasets/news_data/train_news_200.txt
-  fi
-  export TEST_FILE=../data/datasets/news_data/test_200.txt #test.txt1
-  n_classes=3
 else
   echo 'Wrong data_type, EXIT'
   return 1
@@ -164,11 +75,10 @@ fi
 
 eval_batch=$batch
 dim_target_kl=1.0
-dataset=Yelp_cls
 
 CUDA_VISIBLE_DEVICES=$cuda python examples/big_ae/train_ddpm_latent.py \
    --output_dir=../output_home/LM/$data/$name  \
-   --dataset $dataset \
+   --dataset Yelp_cls \
    --encoder_model_type=$bert_type \
    --encoder_model_name_or_path=$bert_model \
    --decoder_model_type=gpt2 \

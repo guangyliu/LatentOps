@@ -710,9 +710,9 @@ def calc_ppl_lgy(model_vae, encoder_tokenizer, decoder_tokenizer, args, ns=1, ga
 
 def generate_from_gan(model_vae, decoder_tokenizer, args, gan=None, num_samples=2000):
     print('Load Classifier')
-    cls_tokenizer = AutoTokenizer.from_pretrained('/home/yiwenhu/Optimus/output/bert_sentiment')
+    cls_tokenizer = AutoTokenizer.from_pretrained('../classifiers/sentiment')
     cls_model = AutoModelForSequenceClassification.from_pretrained(
-        '/home/yiwenhu/Optimus/output/bert_sentiment').cuda().eval()
+        '../classifiers/sentiment').cuda().eval()
     bz = 500
     # num_per_class = 500
     # flag = False
@@ -989,7 +989,7 @@ def main():
     parser.add_argument('--fix_model', type=int, default=0,
                         help="0: no fix; 1: fix both bert & gpt; 2: fix gpt; 3: fix both bert & gpt, extra layers")
     args = parser.parse_args()
-    model_id =  '../../Optimus-ODE/output/gpt2_sentiment' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
+    model_id =  'gpt2' # + args.output_dir.split('/')[-1]  # sentiment'  # _sentiment' #amazon'
     print(model_id)
     global model_ppl
     model_ppl = GPT2_.from_pretrained(model_id).cuda()

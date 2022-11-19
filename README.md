@@ -61,10 +61,8 @@ bash conditional_generation.sh '1,4,33' '1,2,0'
 bash conditional_generation.sh '1,4,33' '1,2,0;0,2,0'
 ```
 The generated files can be found in *../ckpts/model/sample/* (default: *../ckpts/large_yelp/sample/sampling\*.txt*)
-## Outputs
-To facilitate comparison, we provide the output files of text editing with single attribute (text style transfer) in [*./outputs*](/outputs) folder.
 
-## Train Your Own Latent Model (VAE)
+## Train VAE
 Modify the path of data file in *code/train_vae.sh*
 ```shell
 dataset=your_dataset_name
@@ -82,6 +80,51 @@ cd code
 bash train_vae.sh
 ```
 The checkpoints will be saved in *../ckpts/LM/$dataset/$name* by default. You also can find the tensorboard logs in *code/runs/$dataset*
+## Train GAN and Classifiers
+After training VAE, you can train the GAN and classifiers to do some operations.
+### Train GAN
+You need to specify some key arguments: 
+```shell
+train_cls_gan='gan'
+
+ckpt_path=path_to_vae_ckpts  # e.g., ckpt_path=../ckpts/base_yelp
+
+TRAIN_FILE=path_to_test_gan_data_file 
+# e.g., TRAIN_FILE=../data/datasets/yelp_data/train_gan.txt
+
+TRAIN_FILE=path_to_test_gan_data_file 
+# e.g., TEST_FILE=../data/datasets/yelp_data/test.txt
+```
+The GAN training and test data file should have the line format (exclude bracket []): [0]\t[text], where the [0] is not used and meaningless in the training and it can be any other integer. See the example in *../data/datasets/yelp_data/train_gan.txt*
+
+Then run the below command to train GAN:
+```shell
+cd code
+bash train_classifier_latent.sh
+``` 
+### Train Classifiers
+You need to specify some key arguments: 
+```shell
+train_cls_gan='cls'
+
+ckpt_path=path_to_vae_ckpts  # e.g., ckpt_path=../ckpts/base_yelp
+
+TRAIN_FILE=path_to_test_cls_data_file 
+# e.g., TRAIN_FILE=../data/datasets/yelp_data/train_sentiment.txt
+
+TRAIN_FILE=path_to_test_cls_data_file 
+# e.g., TEST_FILE=../data/datasets/yelp_data/test_sentiment.txt
+
+cls_step=identifier_of_classifier
+# identifier of this classifier, the classifier will be stored in path_to_vae_ckpts/checkpoint-cls-1 if cls_step=1
+
+n_classes=number_of_classes
+# number of classes,  e.g., if it contains 2 classes, n_classes=2
+```
+The Classifiers training and test data file should have the line format (exclude bracket []):[class_label]\t[text], where [class_label] should be the class label of the text, it should be a integer. If you have 2 classes, the [class_label] should be 0 or 1. If you have 3 classes, it should be 0, 1, or 2. See *../data/datasets/yelp_data/train_sentiment.txt* for example.
+
+## Outputs
+To facilitate comparison, we provide the output files of text editing with single attribute (text style transfer) in [*./outputs*](/outputs) folder.
 
 
 ## Cite

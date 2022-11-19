@@ -123,6 +123,12 @@ n_classes=number_of_classes
 ```
 The Classifiers training and test data file should have the line format (exclude bracket []):[class_label]\t[text], where [class_label] should be the class label of the text, it should be a integer. If you have 2 classes, the [class_label] should be 0 or 1. If you have 3 classes, it should be 0, 1, or 2. See *../data/datasets/yelp_data/train_sentiment.txt* for example.
 
+Then run the below command to train Classifiers:
+```shell
+cd code
+bash train_classifier_latent.sh
+``` 
+
 ## Outputs
 To facilitate comparison, we provide the output files of text editing with single attribute (text style transfer) in [*./outputs*](/outputs) folder.
 

@@ -150,7 +150,7 @@ class ConditionalTransfer(Sampling):
                 self.cls_model = AutoModelForSequenceClassification.from_pretrained(
                     '../classifiers/amazon').cuda().eval()
             else:
-                model_ = 'tense'
+                model_ = 'sentiment'
                 self.cls_tokenizer = AutoTokenizer.from_pretrained('../classifiers/'+model_) #bert_sentiment')
                 self.cls_model = AutoModelForSequenceClassification.from_pretrained(
                     '../classifiers/'+model_).cuda().eval()
@@ -427,6 +427,8 @@ class ConditionalTransfer(Sampling):
                             print(i)
                             final_list[i] = final_tmp_list[i]
                 # sentent_list[ii].append(text_x1)
+            # import ipdb
+            # ipdb.set_trace()
             for i in range(z.size(0)):
                 f.write(final_list[i] + '\n')
             #### debug
@@ -646,7 +648,7 @@ class ConditionalTransfer(Sampling):
         repa = self.args.repa_num
         sym = ''
         if repa > 0:
-            sym = 'repa' + str(repa) + '_'
+            sym = 'repa' + str(repa) + '_'+str(self.args.weight_energy)
         if self.sampling:
             file_name = os.path.join(self.save_path,
                                      'sampling_' + '_' + str(desired_label) + '.0.txt')
@@ -725,8 +727,8 @@ class ConditionalTransfer(Sampling):
                     # y1 = torch.ones_like(latent_labels)
                     # y[:, 0] = y1
                     # y = y.unsqueeze(1)
-                    _, sample_time = self._sample_batch_repara_multiatt(self.sampler, y, z_k, f, repa, att_val)
-                    # _, sample_time = self._sample_batch_repara(self.sampler, y, z_k, f, repa)
+                    # _, sample_time = self._sample_batch_repara_multiatt(self.sampler, y, z_k, f, repa, att_val)
+                    _, sample_time = self._sample_batch_repara(self.sampler, y, z_k, f, repa)
                     # _, sample_time = self._sample_batch(self.sampler,y,z_k,f)
                     # _, sample_time = self._sample_batch_repara_word(self.sampler, y, z_k, f, word=self.args.data_type)
                     # _, sample_time = self._sample_batch_repara_word(self.sampler, y, z_k, f, word='dog,dogs')

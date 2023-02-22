@@ -62,7 +62,7 @@ from utils_eval import (weight_init, calc_iwnll, calc_rec, calc_mi, calc_au, Buc
 
 from modules import VAE, DenseEmbedder, CCF
 from modules import ConditionalSampling, ConditionalTransfer
-from run_latent_generation import sample_sequence_conditional
+from modules import sample_sequence_conditional
 from conditional_generation import STEP_CLASSES
 logger = logging.getLogger(__name__)
 
@@ -623,11 +623,11 @@ def main():
         condSampling = ConditionalTransfer(sample_q, args.per_gpu_eval_batch_size, latent_dim, n_classes, classifier,
                                            device, save_path, ode_kwargs, ld_kwargs, sde_kwargs,
                                            every_n_plot=5, model_kwargs=model_kwargs, test_data_batch=eval_dataloader)
-        # condSampling.get_samples()
+        condSampling.get_samples()
 
-        for att in args.att_list.split(';'):
-            print(att)
-            condSampling.get_samples_multiple(att)
+        # for att in args.att_list.split(';'):
+        #     print(att)
+        #     condSampling.get_samples_multiple(att)
 
 if __name__ == "__main__":
     main()

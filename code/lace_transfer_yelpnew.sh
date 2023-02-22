@@ -26,7 +26,7 @@ echo "model_size $gpt_size"
 
 
 eval_batch=100
-data_type='sequential' #'amazon'
+data_type='sentiment' #'amazon'
 reg_z=0.0
 
 
@@ -37,8 +37,8 @@ if [ $data_type == 'sentiment' ]
 then
 #  export TRAIN_FILE=../data/datasets/yelpnew_data/sentiment/train100.txt
 #  export TEST_FILE=../data/datasets/yelpshort_data/test_500neg.txt
-  export TEST_FILE=../data/datasets/AEGS_data/yelp/test_ref.txt  #test_neg_500.txt
-  export TEST_FILE=../data/datasets/AEGS_data/yelp/test_ref.txt  #test_neg_500.txt
+  export TEST_FILE=../data/datasets/yelp_data/test_ref.txt
+  # export TEST_FILE=../data/datasets/yelp_data/test_neg_500.txt
   if [ $gpt_size == 'large' ];then
     weight_energy=1.0
   elif [ $gpt_size == 'base' ];then
@@ -109,15 +109,16 @@ dim_target_kl=1.0
 ratio_zero=0.5
 beta="1.0"
 ratio_increase="0.25"
-cls_step=4 #33 #1,4,33
+cls_step=1 #33 #1,4,33
 att_list=1 # $1
-weight_energy=1.5
+weight_energy=1
+reg_z=0.0
 cuda=0 #$2
 echo "Energy $weight_energy"
 for repa_num in 20
 do
     CUDA_VISIBLE_DEVICES=$cuda python examples/big_ae/lace_tst_my.py \
-        --output_dir=../output_home/LM/$data/$name  \
+        --output_dir=../ckpts/large_yelp  \
         --dataset $dataset \
         --encoder_model_type=$bert_type \
         --encoder_model_name_or_path=$bert_model \
@@ -144,26 +145,9 @@ do
         --dim_target_kl $dim_target_kl  --learning_rate 1e-5 \
         --use_pretrained_model \
         --use_pretrained_vae \
-        --checkpoint_dir  ../output_home/LM/$data/$name --gloabl_step_eval 1 \
-        --cls_dir ../output_home/LM/$data/$name/checkpoint-cls- --n_classes 2 \
+        --checkpoint_dir  ../ckpts/large_yelp --gloabl_step_eval 1 \
+        --cls_dir ../ckpts/large_yelp/checkpoint-cls- --n_classes 2 \
         --repa_num $repa_num \
         --reg_z $reg_z --reg_logits $logits --cls_step $cls_step --data_type $data_type --weight_energy $weight_energy --fix_model $fix_model --att_list $att_list
 sleep 0.04
 done
-#for file in `ls ../output_home/LM/$data/$name/sample/transfer*.txt`
-#do
-#  head -500 $file  >> $file
-#done
-
-#mv ../output_home/LM/$data/$name/sample/transfer*.txt ../tst_results/$name/
-#
-#
-#cd ..
-##if [ $data_type == 'sentiment' ]
-##then
-#  python eval_tst.py
-##else
-##  python eval_target_word.py --word $data_type
-##fi
-#cd code
-##

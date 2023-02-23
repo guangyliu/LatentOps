@@ -115,8 +115,8 @@ weight_energy=1
 reg_z=0.0
 cuda=0 #$2
 echo "Energy $weight_energy"
-for repa_num in 20
-do
+repa_num=20
+
     CUDA_VISIBLE_DEVICES=$cuda python examples/big_ae/lace_tst_my.py \
         --output_dir=../ckpts/large_yelp  \
         --dataset $dataset \
@@ -149,5 +149,3 @@ do
         --cls_dir ../ckpts/large_yelp/checkpoint-cls- --n_classes 2 \
         --repa_num $repa_num \
         --reg_z $reg_z --reg_logits $logits --cls_step $cls_step --data_type $data_type --weight_energy $weight_energy --fix_model $fix_model --att_list $att_list
-sleep 0.04
-done

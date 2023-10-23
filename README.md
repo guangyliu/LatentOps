@@ -135,11 +135,13 @@ To facilitate comparison, we provide the output files of text editing with singl
 
 ## Cite
 ```
-@article{liu2022composable,
-    title={Composable Text Control Operations in Latent Space with Ordinary Differential Equations},
-    author={Liu, Guangyi and Feng, Zeyu and Gao, Yuan and Yang, Zichao and Liang, Xiaodan and Bao, Junwei and He, Xiaodong and Cui, Shuguang and Li, Zhen and Hu, Zhiting},
-    journal={arXiv preprint arXiv:2208.00638},
-    year={2022}
+@misc{liu2022composable,
+      title={Composable Text Controls in Latent Space with ODEs}, 
+      author={Guangyi Liu and Zeyu Feng and Yuan Gao and Zichao Yang and Xiaodan Liang and Junwei Bao and Xiaodong He and Shuguang Cui and Zhen Li and Zhiting Hu},
+      year={2022},
+      eprint={2208.00638},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```
 

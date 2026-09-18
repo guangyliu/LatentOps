@@ -1,0 +1,13 @@
+# Tested configuration (2022): Python 3.9, CUDA 11.3
+torch==1.11.0
+torchvision==0.12.0
+transformers==4.19.0
+torchdiffeq>=0.2.3
+nltk==3.7
+numpy<2
+tqdm
+tensorboardX
+sacremoses
+boto3
+# Optional, only needed for --fp16 / apex_opt=O2 in the training scripts:
+#   git clone https://github.com/NVIDIA/apex && pip install -v --no-cache-dir ./apex

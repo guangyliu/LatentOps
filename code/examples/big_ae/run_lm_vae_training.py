@@ -979,8 +979,9 @@ def main():
         model_decoder.transformer.train_adapter("dummy")
         # model_decoder.transformer.train_adapter("poem")
     elif args.fix_model == 12:
-        aa = model_decoder.transformer.load_adapter("/home/guangyiliu/yiwen_Optimus/output/adapters", model_name='gpt2')
-        model_decoder.transformer.train_adapter(aa)
+        # fix_model == 12 loaded a pre-trained adapter from a private path; that
+        # checkpoint is not distributed with LatentOps.
+        raise NotImplementedError("fix_model=12 requires a pre-trained GPT-2 adapter that is not released")
     elif args.fix_model == 13 or args.fix_model == 14 or args.fix_model == 82:
         model_decoder.transformer.h[decoder_n_layer+1].load_state_dict(model_decoder.transformer.h[0].state_dict())
         model_decoder.transformer.h[decoder_n_layer].load_state_dict(model_decoder.transformer.h[11].state_dict())

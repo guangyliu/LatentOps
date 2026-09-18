@@ -11,3 +11,7 @@ code/runs
 *.pyc
 .idea
 Untitled.ipynb
+
+data/raw/
+data/datasets/
+log/

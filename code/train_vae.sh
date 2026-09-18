@@ -1,5 +1,4 @@
 
-export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 
 dataset=yelp
 cuda=0

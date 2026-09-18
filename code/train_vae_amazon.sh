@@ -1,13 +1,5 @@
 #!/bin/bash
-#SBATCH -J XLyelp
-#SBATCH -p p-V100
-#SBATCH -o log/%j.out
-#SBATCH -e log/%j.out
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=4
-#SBATCH --gres=gpu:1
 
-export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 source ../bashrc
 
 data=yelp_poly3

@@ -1,13 +1,5 @@
 #!/bin/bash
-#SBATCH -J cls_yelp
-#SBATCH -p p-V100
-#SBATCH -o log/%j.out
-#SBATCH -e log/%j.out
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=4
-#SBATCH --gres=gpu:1
 
-export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 
 logits=0.0
 weight_energy=1.0

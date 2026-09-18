@@ -1,5 +1,4 @@
 #!/bin/bash
-export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 fix_model=84
 
 weight_energy=1

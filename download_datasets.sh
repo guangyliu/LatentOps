@@ -1,8 +1,5 @@
-mkdir -p data
-wget -c -t 10 "https://cuhko365-my.sharepoint.com/:u:/g/personal/218019026_link_cuhk_edu_cn/ETzJ0Fae4-lHi3vN8G8HYbQBvZr7wh7iQvqMCd2YloAb_g?e=i4NE7O&download=1" -O data/datasets.tar.gz
-cd data
-tar -zxvf datasets.tar.gz
-cd ..
-
+#!/bin/bash
+# The original SharePoint archive is no longer available. The same data is rebuilt
+# from the public Li et al. (2018) corpora:
+python data/prepare_data.py --datasets yelp amazon "$@"
 echo "Datasets are in ./data/datasets"
-

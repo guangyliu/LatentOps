@@ -1,5 +1,4 @@
 #!/bin/bash
-export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 
 cuda=0
 train_cls_gan='cls' # 'gan' or 'cls'

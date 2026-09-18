@@ -490,7 +490,7 @@ class TokenDataset(Dataset):
                 if self.cls and not self.content:
                     example['gpt2_token_length'] = float(lb)
                 elif self.content:
-                    if lb is '':
+                    if lb == '':
                         example['gpt2_token_length'] = []
                     else:
                         example['gpt2_token_length'] = [int(l) for l in lb.split(',')]

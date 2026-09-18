@@ -1,5 +1,4 @@
 #!/bin/bash
-export PYTHONPATH="${PYTHONPATH}:/workspace/code"
 weight_energy=1
 gpt_size='large'
 data_type='sentiment' 
